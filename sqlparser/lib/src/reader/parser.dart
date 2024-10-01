@@ -939,6 +939,9 @@ class Parser {
       // Aggregate functions can use `ORDER BY` in their argument list.
       final orderBy = _orderBy();
 
+      // Cast functions are of the form CAST(a AS b)
+      final asToken = _as();
+
       final rightParen = _consume(
           TokenType.rightParen, 'Expected closing bracket after argument list');
 
