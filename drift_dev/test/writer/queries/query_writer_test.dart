@@ -547,4 +547,31 @@ query (:foo AS TEXT): SELECT :foo;
       ),
     );
   });
+
+  test('can use placeholders without specific type', () async {
+    final result = await generateForQueryInDriftFile(
+      r'''
+CREATE TABLE examples (
+  description TEXT NOT NULL
+);
+
+query: SELECT CAST ($status AS INT) AS status FROM examples;
+''',
+      options: const DriftOptions.defaults(
+        dialect: DialectOptions(null, [SqlDialect.sqlite], null),
+      ),
+    );
+
+    expect(
+      result,
+      allOf(
+        contains(
+          r'''return customSelect('SELECT CAST(${generatedstatus.sql} AS INT) AS status''',
+        ),
+        contains(
+          r'typedef Query$status = Expression Function(Examples examples);',
+        ),
+      ),
+    );
+  });
 }

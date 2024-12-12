@@ -64,6 +64,9 @@ class TypeGraph {
     _indexRelations();
 
     var queue = List.of(_knownTypes.keys);
+    // Apply type propagation to known types for which we know the nullability
+    // too first.
+    queue.sortBy<num>((e) => _knownNullability.containsKey(e) ? 1 : 0);
     while (queue.isNotEmpty) {
       _propagateTypeInfo(queue, queue.removeLast());
     }
@@ -153,6 +156,7 @@ class TypeGraph {
           .any((nullable) => nullable == true);
 
       _knownNullability[edge.target] = nullable;
+      resolved.add(edge.target);
     }
   }
 

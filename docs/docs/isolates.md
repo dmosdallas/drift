@@ -18,7 +18,7 @@ This page describes when advanced isolate setups are necessary, and how to appro
 
 !!! success "When to use drift isolates"
 
-    
+
     - Drift already uses isolates with the default setups to avoid blocking the main
     isolate on synchronous IO.
     - You can open two _independent_ drift databases on different isolates without
@@ -27,7 +27,7 @@ This page describes when advanced isolate setups are necessary, and how to appro
     instances.
     - If you need to share a single drift database on multiple isolates, some setup
     is necessary. This is what drift's isolate APIs are for!
-    
+
 
 
 
@@ -138,10 +138,10 @@ connection for your database class:
 
 !!! warning "Initializations and background isolates"
 
-    
+
     As the name implies, Dart isolates don't share memory. This means that global variables
     and values accessible in one isolate may not be visible in a background isolate.
-    
+
     For instance, if you're using `open.overrideFor` from `package:sqlite3`, you need to do that
     on the isolate where you're actually opening the database!
     With a background isolate as shown here, the right place to call `open.overrideFor` is in the
@@ -149,7 +149,7 @@ connection for your database class:
     Other global fields that you might be relying on when constructing the database (service
     locators like `get_it` come to mind) may also need to be initialized separately on the background
     isolate.
-    
+
 
 
 

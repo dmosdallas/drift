@@ -26,6 +26,7 @@ DriftOptions _$DriftOptionsFromJson(Map json) => $checkedCreate(
             'sql',
             'data_class_to_companions',
             'mutable_classes',
+            'row_class_constructor_all_required',
             'raw_result_set_data',
             'apply_converters_on_variables',
             'generate_values_in_copy_with',
@@ -38,7 +39,10 @@ DriftOptions _$DriftOptionsFromJson(Map json) => $checkedCreate(
             'assume_correct_reference',
             'has_separate_analyzer',
             'preamble',
-            'fatal_warnings'
+            'fatal_warnings',
+            'schema_dir',
+            'test_dir',
+            'databases'
           ],
         );
         final val = DriftOptions(
@@ -64,6 +68,8 @@ DriftOptions _$DriftOptionsFromJson(Map json) => $checkedCreate(
               'data_class_to_companions', (v) => v as bool? ?? true),
           generateMutableClasses:
               $checkedConvert('mutable_classes', (v) => v as bool? ?? false),
+          rowClassConstructorAllRequired: $checkedConvert(
+              'row_class_constructor_all_required', (v) => v as bool? ?? false),
           rawResultSetData: $checkedConvert(
               'raw_result_set_data', (v) => v as bool? ?? false),
           applyConvertersOnVariables: $checkedConvert(
@@ -105,6 +111,17 @@ DriftOptions _$DriftOptionsFromJson(Map json) => $checkedCreate(
               'assume_correct_reference', (v) => v as bool? ?? false),
           dialect: $checkedConvert('sql',
               (v) => v == null ? null : DialectOptions.fromJson(v as Map)),
+          schemaDir: $checkedConvert(
+              'schema_dir', (v) => v as String? ?? 'drift_schemas'),
+          testDir:
+              $checkedConvert('test_dir', (v) => v as String? ?? 'test/drift'),
+          databases: $checkedConvert(
+              'databases',
+              (v) =>
+                  (v as Map?)?.map(
+                    (k, e) => MapEntry(k as String, e as String),
+                  ) ??
+                  {}),
         );
         return val;
       },
@@ -122,6 +139,7 @@ DriftOptions _$DriftOptionsFromJson(Map json) => $checkedCreate(
         'generateManager': 'generate_manager',
         'dataClassToCompanions': 'data_class_to_companions',
         'generateMutableClasses': 'mutable_classes',
+        'rowClassConstructorAllRequired': 'row_class_constructor_all_required',
         'rawResultSetData': 'raw_result_set_data',
         'applyConvertersOnVariables': 'apply_converters_on_variables',
         'generateValuesInCopyWith': 'generate_values_in_copy_with',
@@ -136,7 +154,9 @@ DriftOptions _$DriftOptionsFromJson(Map json) => $checkedCreate(
         'fatalWarnings': 'fatal_warnings',
         'hasDriftAnalyzer': 'has_separate_analyzer',
         'assumeCorrectReference': 'assume_correct_reference',
-        'dialect': 'sql'
+        'dialect': 'sql',
+        'schemaDir': 'schema_dir',
+        'testDir': 'test_dir'
       },
     );
 
@@ -160,6 +180,8 @@ Map<String, dynamic> _$DriftOptionsToJson(DriftOptions instance) =>
       'sql': instance.dialect?.toJson(),
       'data_class_to_companions': instance.dataClassToCompanions,
       'mutable_classes': instance.generateMutableClasses,
+      'row_class_constructor_all_required':
+          instance.rowClassConstructorAllRequired,
       'raw_result_set_data': instance.rawResultSetData,
       'apply_converters_on_variables': instance.applyConvertersOnVariables,
       'generate_values_in_copy_with': instance.generateValuesInCopyWith,
@@ -175,6 +197,9 @@ Map<String, dynamic> _$DriftOptionsToJson(DriftOptions instance) =>
       'has_separate_analyzer': instance.hasDriftAnalyzer,
       'preamble': instance.preamble,
       'fatal_warnings': instance.fatalWarnings,
+      'schema_dir': instance.schemaDir,
+      'test_dir': instance.testDir,
+      'databases': instance.databases,
     };
 
 const _$SqlModuleEnumMap = {
@@ -185,6 +210,7 @@ const _$SqlModuleEnumMap = {
   SqlModule.rtree: 'rtree',
   SqlModule.spellfix1: 'spellfix1',
   SqlModule.geopoly: 'geopoly',
+  SqlModule.dbstat: 'dbstat',
 };
 
 const _$CaseFromDartToSqlEnumMap = {

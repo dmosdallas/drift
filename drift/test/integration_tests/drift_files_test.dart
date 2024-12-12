@@ -8,7 +8,7 @@ import '../test_utils/test_utils.dart';
 
 const _createNoIds =
     'CREATE TABLE IF NOT EXISTS "no_ids" ("payload" BLOB NOT NULL PRIMARY KEY) '
-    'WITHOUT ROWID;';
+    'WITHOUT ROWID, STRICT;';
 
 const _createWithDefaults = 'CREATE TABLE IF NOT EXISTS "with_defaults" ('
     "\"a\" MY_TEXT DEFAULT 'something', \"b\" INTEGER UNIQUE NULL);";

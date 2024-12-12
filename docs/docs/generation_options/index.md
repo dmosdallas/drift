@@ -60,6 +60,9 @@ At the moment, drift supports these options:
   data classes.
 - `mutable_classes` (defaults to `false`): The fields generated in generated data, companion and result set classes are final
   by default. You can make them mutable by setting `mutable_classes: true`.
+- `row_class_constructor_all_required` (defaults to `false`): All parameters for generated row classes
+  (both for tables and custom queries) are `required`, regardless of whether they are nullable.
+  Since these classes always represent a full row, the parameters can be made `required` to reflect that.
 - `raw_result_set_data`: The generator will expose the underlying `QueryRow` for generated result set classes
 - `apply_converters_on_variables` (defaults to `true`): Applies type converters to variables in compiled statements.
 - `generate_values_in_copy_with` (defaults to `true`): Generates a `Value<T?>` instead of `T?` for nullable columns in `copyWith`. This allows to set
@@ -75,7 +78,7 @@ At the moment, drift supports these options:
 - `case_from_dart_to_sql` (defaults to `snake_case`): Controls how the table and column names are re-cased from the Dart identifiers.
   The possible values are `preserve`, `camelCase`, `CONSTANT_CASE`, `snake_case`, `PascalCase`, `lowercase` and `UPPERCASE` (default: `snake_case`).
 - `write_to_columns_mixins`: Whether the `toColumns` method should be written as a mixin instead of being added directly to the data class.
-  This is useful when using [existing row classes](../custom_row_classes.md), as the mixin is generated for those as well.
+  This is useful when using [existing row classes](../dart_api/rows.md#custom-dataclass), as the mixin is generated for those as well.
 - `has_separate_analyzer`: This option is only relevant when using the `drift_dev:not_shared` builder, which needs to use a less efficient
   analysis implementation than the other builders by default. After also applying `drift_dev:analyzer` to the same build target, this option
   can be enabled to speed up builds. This option has no effect with the default or the modular builder.
@@ -167,6 +170,7 @@ targets:
                 - json1
                 - fts5
                 - math
+                - dbstat
 ```
 
 We currently support the following extensions:
@@ -180,6 +184,9 @@ We currently support the following extensions:
 - [geopoly](https://www.sqlite.org/geopoly.html), a generalization of the R*Tree module supporting more complex
   polygons. Note that this is not the case for most sqlite3 builds,
   including the ones shipping with `sqlite3_flutter_libs`.
+- [dbstat](https://www.sqlite.org/dbstat.html), a module reporting information about the amount of disk space used by
+  different tables. This requires a build flag when compiling SQLite. `sqlite3_flutter_libs` sets that flag,
+  but other SQLite distributions might not.
 - `moor_ffi`: Enables support for functions that are only available when using a `NativeDatabase`. This contains `pow`, `sqrt` and a variety
   of trigonometric functions. Details on those functions are available [here](../Platforms/vm.md#drift-only-functions).
 - `math`: Assumes that sqlite3 was compiled with [math functions](https://www.sqlite.org/lang_mathfunc.html).

@@ -197,6 +197,15 @@ abstract class Table extends HasResultSet {
   @protected
   ColumnBuilder<double> real() => _isGenerated();
 
+  /// Use this as a the body of a getter to declare a column that holds
+  /// arbitrary values not modified by drift at runtime.
+  ///
+  /// The type of this column in the schema is `ANY`, which is particularly
+  /// useful for columns with an unknown type in [isStrict] tables.
+  /// This type has no direct equivalent for other database engines.
+  @protected
+  ColumnBuilder<DriftAny> sqliteAny() => _isGenerated();
+
   /// Defines a column with a custom [type] when used as a getter.
   ///
   /// For more information on custom types and when they can be useful, see
@@ -241,7 +250,7 @@ abstract class View extends HasResultSet {
   /// }
   /// ```
   @protected
-  SimpleSelectStatement from(Table table) => _isGenerated();
+  JoinedSelectStatement from(Table table) => _isGenerated();
 
   /// This method is overridden by Dart-defined views to declare the right
   /// query to run.

@@ -158,7 +158,7 @@ class Migrator {
     final foreignKeysEnabled =
         (await database.customSelect('PRAGMA foreign_keys').getSingle())
             .read<bool>('foreign_keys');
-    final legacyAlterTable =
+    bool? legacyAlterTable =
         (await database.customSelect('PRAGMA legacy_alter_table').getSingle())
             .read<bool>('legacy_alter_table');
 
@@ -255,8 +255,31 @@ class Migrator {
       // we've just dropped the original table), we need to enable the legacy
       // option which skips the integrity check.
       // See also: https://sqlite.org/forum/forumpost/0e2390093fbb8fd6
-      if (!legacyAlterTable) {
-        await _issueCustomQuery('pragma legacy_alter_table = 1;');
+      if (legacyAlterTable == false) {
+        try {
+          await _issueCustomQuery('pragma legacy_alter_table = 1;');
+        } on Object {
+          // On some databases like Turso, legacy_alter_table is not writable.
+          legacyAlterTable = null;
+
+          // A workaround is to drop all views and to re-create them later.
+          // We're not doing this by default to ensure we're not breaking
+          // existing users (e.g. if the new table references a view somehow).
+          final allViews = await database.customSelect(
+            'SELECT name, sql FROM sqlite_master WHERE type = ?;',
+            variables: [Variable<String>('view')],
+          ).get();
+
+          for (final row in allViews) {
+            final sql = row.read<String>('sql');
+            if (!createAffected.contains(sql)) {
+              createAffected.add(sql);
+            }
+
+            final name = row.read<String>('name');
+            await database.customStatement('DROP VIEW "$name";');
+          }
+        }
       }
 
       // Step 7: Rename the new table to the old name
@@ -264,7 +287,7 @@ class Migrator {
           'ALTER TABLE ${context.identifier(temporaryName)} '
           'RENAME TO ${context.identifier(tableName)}');
 
-      if (!legacyAlterTable) {
+      if (legacyAlterTable == false) {
         await _issueCustomQuery('pragma legacy_alter_table = 0;');
       }
 
@@ -346,12 +369,15 @@ class Migrator {
 
     context.buffer.write(')');
 
-    // == true because of nullability
-    if (dslTable.withoutRowId) {
-      context.buffer.write(' WITHOUT ROWID');
-    }
-    if (dslTable.isStrict) {
-      context.buffer.write(' STRICT');
+    final options = [
+      if (dslTable.withoutRowId) 'WITHOUT ROWID',
+      if (dslTable.isStrict) 'STRICT'
+    ].join(', ');
+
+    if (options.isNotEmpty) {
+      context.buffer
+        ..write(' ')
+        ..write(options);
     }
 
     context.buffer.write(';');

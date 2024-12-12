@@ -75,6 +75,7 @@ class StreamQueryStore {
   final HashSet<StreamKey?> _keysPendingRemoval = HashSet<StreamKey?>();
 
   bool _isShuttingDown = false;
+  final bool _closeStreamsSynchronously;
 
   // we track pending timers since Flutter throws an exception when timers
   // remain after a test run.
@@ -87,6 +88,9 @@ class StreamQueryStore {
   // facing api.
   final StreamController<Set<TableUpdate>> _tableUpdates =
       StreamController.broadcast(sync: true);
+
+  StreamQueryStore({bool closeStreamsSynchronously = false})
+      : _closeStreamsSynchronously = closeStreamsSynchronously;
 
   /// Creates a new stream from the select statement.
   Stream<T> registerStream<T extends Object>(
@@ -129,6 +133,12 @@ class StreamQueryStore {
     if (_isShuttingDown) return;
 
     final key = stream._fetcher.key;
+    if (_closeStreamsSynchronously) {
+      whenRemoved();
+      _activeKeyStreams.remove(key);
+      return;
+    }
+
     _keysPendingRemoval.add(key);
 
     // sync because it's only triggered after the timer

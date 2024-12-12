@@ -42,4 +42,11 @@ void main() {
   test('absolute values', () {
     expect(i2.abs(), generates('abs(i2)'));
   });
+
+  test('with columns', () {
+    expect(const Variable(0) - (i1 - Variable(10)),
+        generates('? - (i1 - ?)', [0, 10]));
+    expect((const Variable(0) - i1) - Variable(10),
+        generates('(? - i1) - ?', [0, 10]));
+  });
 }

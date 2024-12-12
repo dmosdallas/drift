@@ -74,7 +74,7 @@ extension on TestDriftProject {
           'export',
           source,
           if (dialect case final dialect?) '--dialect=${dialect.name}',
-        ]);
+        ], dropPrints: false);
       },
       zoneSpecification: ZoneSpecification(
         print: (_, __, ___, msg) => printStatements.add(msg),

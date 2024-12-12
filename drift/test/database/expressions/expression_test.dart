@@ -138,7 +138,7 @@ void main() {
         for (var i = 0; i < 5; i++)
           CustomExpression<bool>('e$i', precedence: Precedence.primary)
       ]),
-      generates('e0 AND e1 AND e2 AND e3 AND e4'),
+      generates('(((e0 AND e1) AND e2) AND e3) AND e4'),
     );
 
     expect(Expression.and(const []), generates('1'));
@@ -152,7 +152,7 @@ void main() {
         for (var i = 0; i < 5; i++)
           CustomExpression<bool>('e$i', precedence: Precedence.primary)
       ]),
-      generates('e0 OR e1 OR e2 OR e3 OR e4'),
+      generates('(((e0 OR e1) OR e2) OR e3) OR e4'),
     );
 
     expect(Expression.or(const []), generates('0'));
@@ -172,7 +172,7 @@ void main() {
           const CustomExpression<bool>('d', precedence: Precedence.primary),
         ]),
       ]),
-      generates('(a OR b) AND c AND d'),
+      generates('(a OR b) AND (c AND d)'),
     );
   });
 

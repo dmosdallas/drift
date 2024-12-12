@@ -37,12 +37,14 @@ abstract class Query<T extends HasResultSet, D> extends Component {
   @visibleForOverriding
   void writeStartPart(GenerationContext ctx);
 
-  @override
-  void writeInto(GenerationContext context) {
+  void _writeInto(GenerationContext context,
+      {bool withOrderByAndLimit = true}) {
     // whether we need to insert a space before writing the next component
     var needsWhitespace = false;
 
-    void writeWithSpace(Component? component) {
+    void writeWithSpace(
+      Component? component,
+    ) {
       if (component == null) return;
 
       if (needsWhitespace) context.writeWhitespace();
@@ -55,14 +57,21 @@ abstract class Query<T extends HasResultSet, D> extends Component {
 
     writeWithSpace(whereExpr);
     writeWithSpace(_groupBy);
-    writeWithSpace(orderByExpr);
-    writeWithSpace(limitExpr);
+    if (withOrderByAndLimit) {
+      writeWithSpace(orderByExpr);
+      writeWithSpace(limitExpr);
+    }
 
     if (writeReturningClause) {
       if (needsWhitespace) context.writeWhitespace();
 
       context.buffer.write('RETURNING *');
     }
+  }
+
+  @override
+  void writeInto(GenerationContext context) {
+    _writeInto(context);
   }
 
   /// Constructs the query that can then be sent to the database executor.

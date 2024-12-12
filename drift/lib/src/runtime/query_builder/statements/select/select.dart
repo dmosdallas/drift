@@ -8,7 +8,7 @@ typedef OrderClauseGenerator<T> = OrderingTerm Function(T tbl);
 ///
 /// Users are not allowed to extend, implement or mix-in this class.
 @sealed
-abstract class BaseSelectStatement<Row> extends Component {
+abstract class BaseSelectStatement<Row> extends Component with Selectable<Row> {
   Iterable<(Expression, String)> get _expandedColumns;
 
   /// The name for the given [expression] in the result set, or `null` if
@@ -192,6 +192,7 @@ final class SelectWithoutTables extends BaseSelectStatement<TypedResult>
 
   @override
   void writeInto(GenerationContext context) {
+    final isRoot = context.buffer.isEmpty;
     context.buffer.write('SELECT ');
     var first = true;
     for (final MapEntry(key: expr, value: alias) in _columns.entries) {
@@ -202,7 +203,8 @@ final class SelectWithoutTables extends BaseSelectStatement<TypedResult>
       expr.writeInto(context);
       context.buffer.write(' ${context.identifier(alias)}');
     }
-    context.buffer.write(';');
+
+    if (isRoot) context.buffer.write(';');
   }
 
   GenerationContext _createContext() {

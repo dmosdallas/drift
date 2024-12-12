@@ -255,7 +255,7 @@ abstract class Expression<D extends Object> implements FunctionParameter {
   ///  - [Component.writeInto], which doesn't take any precedence relation into
   ///  account.
   void writeAroundPrecedence(GenerationContext context, Precedence precedence) {
-    if (this.precedence < precedence) {
+    if (this.precedence <= precedence) {
       context.buffer.write('(');
       writeInto(context);
       context.buffer.write(')');

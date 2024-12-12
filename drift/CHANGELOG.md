@@ -1,7 +1,31 @@
-## 2.21.0-dev
+## 2.23.0-dev
+
+- Allow building compound select statements in Dart.
+
+## 2.22.1
+
+- Fix generated SQL for `insertFromSelect` statements with upserts.
+- Fix `alterTable` for databases where `legacy_alter_table` is not writable.
+- Allow `package:drift/web.dart` to be imported into Dart apps compiled with
+  dart2wasm.
+
+## 2.22.0
+
+- Add `sqliteAny()` method to tables to declare `ANY` columns.
+- Add missing parentheses around adjacent expressions of the same precedence.
+- Fix creating tables that are both `STRICT` and `WITHOUT ROWID`.
+- WASM: Report worker failures to make them easier to diagnose.
+- Allow closing stream queries synchronously, making drift easier to use in
+  widget tests.
+
+## 2.21.0
 
 - To infer whether serialization is required for inter-isolate communication,
   drift now sends a test message instead serializing by default.
+- The manager API now ignores references whose target column is a foreign key itself.
+- The DevTools extension can now clear drift databases.
+- `View.from` is now declared to return a `JoinedSelectStatement`, the type it
+  returns at runtime.
 
 ## 2.20.2
 

@@ -120,6 +120,9 @@ class SqlEngine {
   /// Tokenizes the [source] into a list list [Token]s. Each [Token] contains
   /// information about where it appears in the [source] and a [TokenType].
   ///
+  /// If an error occurs while tokenizing, e.g. because an invalid token is
+  /// found, throws a [CumulatedTokenizerException].
+  ///
   /// Note that the list might be tokens that should be
   /// [Token.invisibleToParser], if you're passing them to a [Parser] directly,
   /// you need to filter them. When using the methods in this class, this will
@@ -159,6 +162,11 @@ class SqlEngine {
   }
 
   /// Parses a single [sql] statement into an AST-representation.
+  ///
+  /// This method generally doesn't throw, but instead collects parsing errors
+  /// through [ParseResult.errors]. Callers should check that value instead of
+  /// blindly trusting the returned AST, as it will be an approximation if
+  /// parsing errors were encountered.
   ParseResult parse(String sql) {
     final (tokens, parser, _) = _createParser(sql);
 
@@ -170,6 +178,11 @@ class SqlEngine {
   ///
   /// You can use the [AstNode.childNodes] of the returned [ParseResult.rootNode]
   /// to inspect the returned statements.
+  ///
+  /// This method generally doesn't throw, but instead collects parsing errors
+  /// through [ParseResult.errors]. Callers should check that value instead of
+  /// blindly trusting the returned AST, as it will be an approximation if
+  /// parsing errors were encountered.
   ParseResult parseMultiple(String sql) {
     final (tokens, parser, _) = _createParser(sql);
 
@@ -181,6 +194,11 @@ class SqlEngine {
   ///
   /// The [ParseResult.rootNode] will be a [ColumnDefinition] with the parsed
   /// constraints.
+  ///
+  /// This method generally doesn't throw, but instead collects parsing errors
+  /// through [ParseResult.errors]. Callers should check that value instead of
+  /// blindly trusting the returned AST, as it will be an approximation if
+  /// parsing errors were encountered.
   ParseResult parseColumnConstraints(String sql) {
     final (tokens, parser, _) = _createParser(sql, driftExtensions: false);
 
@@ -201,6 +219,11 @@ class SqlEngine {
   ///
   /// The [ParseResult.rootNode] will either be a [TableConstraint] or an
   /// [InvalidStatement] in case of parsing errors.
+  ///
+  /// This method generally doesn't throw, but instead collects parsing errors
+  /// through [ParseResult.errors]. Callers should check that value instead of
+  /// blindly trusting the returned AST, as it will be an approximation if
+  /// parsing errors were encountered.
   ParseResult parseTableConstraint(String sql) {
     final (tokens, parser, _) = _createParser(sql, driftExtensions: false);
 
@@ -264,11 +287,7 @@ class SqlEngine {
   AnalysisContext analyzeParsed(ParseResult result,
       {AnalyzeStatementOptions? stmtOptions}) {
     final node = result.rootNode;
-
-    final context = _createContext(node, result.sql, stmtOptions);
-    _analyzeContext(context);
-
-    return context;
+    return analyzeNode(node, result.sql, stmtOptions: stmtOptions);
   }
 
   /// Analyzes the given [node], which should be a [CrudStatement].

@@ -3,7 +3,7 @@ import 'converter.dart';
 
 CREATE TABLE no_ids (
     payload BLOB NOT NULL PRIMARY KEY
-) WITHOUT ROWID WITH NoIdRow;
+) STRICT, WITHOUT ROWID WITH NoIdRow;
 
 CREATE TABLE with_defaults (
     a `const CustomTextType()` JSON KEY customJsonName DEFAULT 'something',

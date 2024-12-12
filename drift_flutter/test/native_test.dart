@@ -11,7 +11,7 @@ import 'package:drift/internal/versioned_schema.dart';
 import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:drift_flutter/src/native.dart'
-    show hasConfiguredSqlite, portName;
+    show PingWithTimeout, hasConfiguredSqlite, portName;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -123,6 +123,34 @@ void main() {
       // This wouldn't work if the database is still open, as the exclusive
       // would block the write.
       await raw.simpleTable.insertOne(RawValuesInsertable({}));
+    });
+  });
+
+  group('pingWithTimeout', () {
+    test('works with alive isolates', () async {
+      expect(await Isolate.current.pingWithTimeout(), true);
+    });
+
+    test('works with stopped isolates', () async {
+      final isolate = await Isolate.spawn((_) {}, '');
+      isolate.kill();
+
+      expect(await isolate.pingWithTimeout(), false);
+    });
+
+    test('works with paused isolates', () async {
+      final isolate = await Isolate.spawn((_) async {
+        while (true) {
+          await Future.delayed(const Duration(seconds: 10));
+        }
+      }, '');
+      final resume = isolate.pause();
+      addTearDown(() => isolate.kill());
+
+      await pumpEventQueue(); // Make sure the isolate is actually paused..
+      expect(await isolate.pingWithTimeout(), true); // Still reachable!
+
+      isolate.resume(resume);
     });
   });
 }

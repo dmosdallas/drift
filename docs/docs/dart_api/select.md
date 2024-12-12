@@ -5,9 +5,6 @@ description: Select rows or individual columns from tables in Dart
 
 ---
 
-
-
-
 This page describes how to write `SELECT` statements with drift's dart_api.
 To make examples easier to grasp, they're referencing two common tables forming
 the basis of a todo-list app:
@@ -288,8 +285,6 @@ Any statement can be used as a subquery. But be aware that, unlike [subquery exp
 
 ## JSON support
 
-
-
 sqlite3 has great support for [JSON operators](https://sqlite.org/json1.html) that are also available
 in drift (under the additional `'package:drift/extensions/json1.dart'` import).
 JSON support is helpful when storing a dynamic structure that is best represented with JSON, or when
@@ -333,3 +328,34 @@ at all.
 Instead, the expressions in the list passed to `selectExpressions` are evaluated in a standalone
 select statement and can be parsed from the `TypedResult` class returned when evaluating the
 query.
+
+## Compound selects
+
+With compound selects, the results of multiple selects statements can be returned at once.
+Different operators are available to apply set operations on queries, namely:
+
+1. `UNION ALL` and `UNION`: Returns the results of two select statements in a select, with
+   duplicates included or filtered, respectively.
+2. `EXCEPT`: Returns all rows of the first select statement that did not appear in the second
+   query.
+3. `INTERSECT`: Returns all rows that were returned by both select statements.
+
+As an example, consider the tables used to track todo items introduced [in the article on tables](tables.md#defining-tables). Here, one table stores todo items and another table defines categories
+that can be used to group these items.
+Now, perhaps you want to query how many items are assigned to each category, as well as the amount
+of items not in any category.
+The first query can be written with a `groupBy` on categories and a [subquery](expressions.md#subqueries)
+to count associated todo items.
+When grouping on the categories table though, there will be no "null" group. So, one way to resolve
+everything in a single query is to write another query and use `unionAll`:
+
+{{ load_snippet('compound','lib/snippets/dart_api/select.dart.excerpt.json') }}
+
+This query will return one row for each category, counting associated todo items. Also, it includes
+a final row without a category description reporting the count of todo items outside of categories.
+
+With all of these operators, all involved queries must return compatible rows. This is because
+the queries are ultimately reported as a single result set, so they must return the same column
+types.
+It is possible to apply a `LIMIT` and `ORDER BY` clause to compound select statements, but only
+to the first statement (the one on which `union`, `unionAll`, `except` or `intersect` is called).

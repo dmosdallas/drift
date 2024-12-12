@@ -81,6 +81,9 @@ class DriftOptions {
   @JsonKey(name: 'mutable_classes', defaultValue: false)
   final bool generateMutableClasses;
 
+  @JsonKey(name: 'row_class_constructor_all_required', defaultValue: false)
+  final bool rowClassConstructorAllRequired;
+
   /// Whether generated query classes should inherit from the `CustomResultSet`
   /// and expose their underlying raw `row`.
   @JsonKey(name: 'raw_result_set_data', defaultValue: false)
@@ -123,6 +126,15 @@ class DriftOptions {
   @JsonKey(name: 'fatal_warnings', defaultValue: false)
   final bool fatalWarnings;
 
+  @JsonKey(name: 'schema_dir', defaultValue: "drift_schemas")
+  final String schemaDir;
+
+  @JsonKey(name: 'test_dir', defaultValue: "test/drift")
+  final String testDir;
+
+  @JsonKey(name: 'databases', defaultValue: {})
+  final Map<String, String> databases;
+
   @internal
   const DriftOptions.defaults({
     this.generateFromJsonStringConstructor = false,
@@ -135,6 +147,7 @@ class DriftOptions {
     this.generateManager = true,
     this.dataClassToCompanions = true,
     this.generateMutableClasses = false,
+    this.rowClassConstructorAllRequired = false,
     this.rawResultSetData = false,
     this.applyConvertersOnVariables = true,
     this.generateValuesInCopyWith = true,
@@ -151,6 +164,9 @@ class DriftOptions {
     this.fatalWarnings = false,
     this.hasDriftAnalyzer = false,
     this.assumeCorrectReference = false,
+    this.schemaDir = "drift_schemas",
+    this.testDir = "test/drift",
+    this.databases = const {},
   });
 
   DriftOptions({
@@ -164,6 +180,7 @@ class DriftOptions {
     required this.generateManager,
     required this.dataClassToCompanions,
     required this.generateMutableClasses,
+    required this.rowClassConstructorAllRequired,
     required this.rawResultSetData,
     required this.applyConvertersOnVariables,
     required this.generateValuesInCopyWith,
@@ -180,6 +197,9 @@ class DriftOptions {
     required this.hasDriftAnalyzer,
     required this.assumeCorrectReference,
     this.dialect,
+    required this.schemaDir,
+    required this.testDir,
+    required this.databases,
   }) {
     // ignore: deprecated_member_use_from_same_package
     if (sqliteAnalysisOptions != null && modules.isNotEmpty) {
@@ -427,6 +447,10 @@ enum SqlModule {
   ///
   /// See more: https://www.sqlite.org/geopoly.html
   geopoly,
+
+  /// Enables the dbstat table providing insights into the disk state occupied
+  /// by certain tables.
+  dbstat,
 }
 
 /// The possible values for the case of the table and column names.

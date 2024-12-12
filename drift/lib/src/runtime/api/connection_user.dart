@@ -268,7 +268,8 @@ abstract class DatabaseConnectionUser {
   /// final row = await selectExpressions([currentDateAndTime]).getSingle();
   /// final databaseTime = row.read(currentDateAndTime)!;
   /// ```
-  Selectable<TypedResult> selectExpressions(Iterable<Expression> columns) {
+  BaseSelectStatement<TypedResult> selectExpressions(
+      Iterable<Expression> columns) {
     return SelectWithoutTables(this, columns);
   }
 

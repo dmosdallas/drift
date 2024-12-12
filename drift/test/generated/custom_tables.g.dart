@@ -55,6 +55,8 @@ class NoIds extends Table with TableInfo<NoIds, NoIdRow> {
   @override
   bool get withoutRowId => true;
   @override
+  bool get isStrict => true;
+  @override
   bool get dontWriteConstraints => true;
 }
 

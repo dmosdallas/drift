@@ -285,6 +285,28 @@ q: INSERT INTO my_table (b, c, d) VALUES (?, ?, ?);
     }, result.dartOutputs, result.writer);
   });
 
+  test('can disable manager code for modular builds', () async {
+    final result = await emulateDriftBuild(
+      inputs: {
+        'a|lib/main.drift': '''
+CREATE TABLE my_table (
+  a INTEGER PRIMARY KEY,
+  b TEXT,
+  c BLOB,
+  d ANY
+) STRICT;
+''',
+      },
+      modularBuild: true,
+      options: BuilderOptions({'generate_manager': false}),
+      logger: loggerThat(neverEmits(anything)),
+    );
+
+    checkOutputs({
+      'a|lib/main.drift.dart': decodedMatches(isNot(contains('Manager'))),
+    }, result.dartOutputs, result.writer);
+  });
+
   test('supports `MAPPED BY` for columns', () async {
     final results = await emulateDriftBuild(
       inputs: {
@@ -1199,6 +1221,53 @@ CREATE TABLE b (foo INTEGER);
           ],
         ),
       ),
+    );
+  });
+
+  test('generates generic type converters correctly', () async {
+    // Regression test for https://github.com/simolus3/drift/issues/3300
+    final build = await emulateDriftBuild(
+      inputs: {
+        'a|lib/main.dart': '''
+import 'dart:convert';
+import 'package:drift/drift.dart';
+
+part 'main.drift.dart';
+
+class MapConverter<T> extends TypeConverter<Map<String, T>, String> {
+  @override
+  Map<String, T> fromSql(String fromDb) {
+    return Map<String, T>.from(jsonDecode(fromDb) ?? {});
+  }
+
+  @override
+  String toSql(Map<String, T> value) {
+    return jsonEncode(value);
+  }
+}
+
+class Users extends Table {
+  IntColumn get id => integer()();
+  TextColumn get extraData => text().map(MapConverter<Object?>())();
+}
+
+@DriftDatabase(tables: [Users])
+class Database {}
+''',
+      },
+      logger: loggerThat(neverEmits(anything)),
+      options: BuilderOptions({'generate_manager': false}),
+    );
+
+    checkOutputs(
+      {
+        'a|lib/main.drift.dart': decodedMatches(contains(r'''
+  static TypeConverter<Map<String, Object?>, String> $converterextraData =
+      MapConverter<Object?>();
+'''))
+      },
+      build.dartOutputs,
+      build.writer,
     );
   });
 }

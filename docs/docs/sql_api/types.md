@@ -24,15 +24,13 @@ in the core `drift` package and don't work with all databases.
 
 !!! note "When to use custom types - summary"
 
-    
+
     Custom types are a good tool when extending drift support to new database engines
     with their own types not already covered by drift.
-    
+
     Unless you're extending drift to work with a new database package (which is awesome,
     please reach out!), you probably don't need to implement custom types yourself.
     Packages like `drift_postgres` already define relevant custom types for you.
-    
-
 
 
 ## Defining a type
@@ -111,3 +109,6 @@ while falling back to an integer type on sqlite3 and other databases:
   Column<Duration> get frequency => customType(durationType)
       .clientDefault(() => Duration(minutes: 15))();
 ```
+
+[types]: ../dart_api/tables.md#column-types
+[type converters]: ../type_converters.md

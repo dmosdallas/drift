@@ -90,7 +90,7 @@ void main() {
           expect(
             expr,
             generates(
-                'CAST(strftime(\'%s\', CURRENT_TIMESTAMP) AS INTEGER) + ? - ?',
+                '(CAST(strftime(\'%s\', CURRENT_TIMESTAMP) AS INTEGER) + ?) - ?',
                 [259200, 5]),
           );
         }

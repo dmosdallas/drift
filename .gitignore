@@ -34,5 +34,6 @@ docs/lib/**/**.json
 docs/.cache
 docs/docs/*.js
 docs/docs/*.wasm
+docs/docs/*.css
 docs/docs/examples/**
 docs/web/robots.txt

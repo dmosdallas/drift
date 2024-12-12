@@ -23,11 +23,13 @@ extension FoundElementType on FoundElement {
               break;
           }
         } else if (kind is ExpressionDartPlaceholderType) {
-          builder
-            ..addSymbol('Expression', AnnotatedDartCode.drift)
-            ..addText('<')
-            ..addCode(scope.innerColumnType(kind.columnType!))
-            ..addText('>');
+          builder.addSymbol('Expression', AnnotatedDartCode.drift);
+          if (kind.columnType case final type?) {
+            builder
+              ..addText('<')
+              ..addCode(scope.innerColumnType(type))
+              ..addText('>');
+          }
         } else if (kind is InsertableDartPlaceholderType) {
           final table = kind.table;
 

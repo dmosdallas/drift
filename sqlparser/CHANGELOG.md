@@ -1,3 +1,18 @@
+## 0.40.0
+
+- Add support for the `dbstat` module.
+- Prioritize null propagation in type resolver, leading to more accurate
+  analysis on which columns are nullable.
+
+## 0.39.2
+
+- Fix false-positive lint for a parameter count mismatch on `bm25()`.
+- Fix type interference around `fts5` function calls.
+
+## 0.39.1
+
+- Improve recovery in parser when encountering syntax errors.
+
 ## 0.39.0
 
 - When using the `parse` methods on `SqlEngine`, tokenizer errors are now

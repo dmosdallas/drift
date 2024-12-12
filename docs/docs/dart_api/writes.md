@@ -8,6 +8,7 @@ description: Select rows or invidiual columns from tables in Dart
 ## Updates and deletes
 
 You can use the generated classes to update individual fields of any row:
+
 ```dart
 Future moveImportantTasksIntoCategory(Category target) {
   // for updates, we use the "companion" version of a generated class. This wraps the
@@ -36,12 +37,12 @@ Future feelingLazy() {
   return (delete(todos)..where((t) => t.id.isSmallerThanValue(10))).go();
 }
 ```
-__⚠️ Caution:__ If you don't explicitly add a `where` clause on updates or deletes, 
+__⚠️ Caution:__ If you don't explicitly add a `where` clause on updates or deletes,
 the statement will affect all rows in the table!
 
 !!! note "Entries, companions - why do we need all of this?"
 
-    
+
     You might have noticed that we used a `TodosCompanion` for the first update instead of
     just passing a `Todo`. Drift generates the `Todo` class (also called _data
     class_ for the table) to hold a __full__ row with all its data. For _partial_ data,
@@ -50,17 +51,27 @@ the statement will affect all rows in the table!
     Why is that necessary? If a field was set to `null`, we wouldn't know whether we need
     to set that column back to null in the database or if we should just leave it unchanged.
     Fields in the companions have a special `Value.absent()` state which makes this explicit.
-    
+
     Companions also have a special constructor for inserts - all columns which don't have
     a default value and aren't nullable are marked `@required` on that constructor. This makes
     companions easier to use for inserts because you know which fields to set.
-    
 
+### Updating with SQL expressions
 
+In some cases, you might want to update many rows based on their current value.
+One option would be to first select the affected rows into Dart objects, create companions
+based on those results and use them for updates.
+If the update can be described in SQL, a more efficient way is available with `Companion.custom`:
+
+{{ load_snippet('companion-custom','lib/snippets/dart_api/dataclass.dart.excerpt.json') }}
+
+Here, the `name` column in the `users` table is changed to lowercase for all existing rows.
+Since `.lower()` on columns is implemented in the database, the rows don't have to be loaded
+into Dart during the statement.
 
 ## Inserts
 You can very easily insert any valid object into tables. As some values can be absent
-(like default values that we don't have to set explicitly), we again use the 
+(like default values that we don't have to set explicitly), we again use the
 companion version.
 ```dart
 // returns the generated id
@@ -112,8 +123,6 @@ This makes them suitable for bulk insert or update operations.
 
 ### Upserts
 
-
-
 Upserts are a feature from newer sqlite3 versions that allows an insert to
 behave like an update if a conflicting row already exists.
 
@@ -151,17 +160,17 @@ counter if it already exists:
 
 !!! note "Unique constraints and conflict targets"
 
-    
+
     Both `insertOnConflictUpdate` and `onConflict: DoUpdate` use an `DO UPDATE`
     upsert in sql. This requires us to provide a so-called "conflict target", a
     set of columns to check for uniqueness violations. By default, drift will use
     the table's primary key as conflict target. That works in most cases, but if
     you have custom `UNIQUE` constraints on some columns, you'll need to use
     the `target` parameter on `DoUpdate` in Dart to include those columns:
-    
+
     {{ load_snippet('upsert-target','lib/snippets/modular/upserts.dart.excerpt.json') }}
-    
-    
+
+
 
 
 

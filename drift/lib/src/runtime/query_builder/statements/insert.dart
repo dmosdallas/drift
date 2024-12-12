@@ -89,7 +89,6 @@ class InsertStatement<T extends Table, D> {
   /// target column, and values are expressions added to the select statement.
   ///
   /// For an example, see the [documentation website](https://drift.simonbinder.eu/docs/advanced-features/joins/#using-selects-as-insert)
-  @experimental
   Future<void> insertFromSelect(
     BaseSelectStatement select, {
     required Map<Column, Expression> columns,
@@ -129,7 +128,12 @@ class InsertStatement<T extends Table, D> {
       ..write(
           columnNameToSelectColumnName.values.map(ctx.identifier).join(', '))
       ..write(' FROM $sourceCte');
-    _writeOnConflict(ctx, mode, null, onConflict);
+    if (onConflict != null) {
+      // Resolve parsing ambiguity (a `ON` from the conflict clause could also
+      // be parsed as a join).
+      ctx.buffer.write(' WHERE TRUE');
+      _writeOnConflict(ctx, mode, null, onConflict);
+    }
 
     return await database.withCurrentExecutor((e) async {
       await e.runInsert(ctx.sql, ctx.boundVariables);

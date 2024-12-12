@@ -51,28 +51,28 @@ class MyDatabase extends _$MyDatabase {
 
 !!! note "Installing sqlite"
 
-    
+
     We can't distribute an sqlite installation as a pub package (at least
     not as something that works outside of a Flutter build), so you need
     to ensure that you have the sqlite3 shared library installed on your
     system.
-    
+
     On macOS, it's installed by default.
-    
+
     On Linux, you can use the `libsqlite3-dev` package on Ubuntu and the
     `sqlite3` package on Arch (other distros will have similar packages).
-    
+
     On Windows, you can [download 'Precompiled Binaries for Windows'](https://www.sqlite.org/download.html)
     and extract `sqlite3.dll` into a folder that's in your `PATH`
     environment variable. Then restart your device to ensure that
     all apps will run with this `PATH` change.
-    
+
     As `sqlite3_flutter_libs` bundles the latest sqlite3 version with your app,
     using a recent sqlite3 version is recommended to avoid differences in how tests
     behave from your app.
     The minimum sqlite version tested with drift is 3.29.0, but many drift features
     like `returning` or generated columns will require more recent versions.
-    
+
 
 
 
@@ -82,7 +82,9 @@ We can create an in-memory version of the database by using a
 `NativeDatabase.memory()` instead of a `FlutterQueryExecutor` or other implementations. A good
 place to open the database is the `setUp` and `tearDown` methods from
 `package:test`:
+
 ```dart
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:test/test.dart';
 // the file defined above, you can test any drift database of course
@@ -92,13 +94,24 @@ void main() {
   MyDatabase database;
 
   setUp(() {
-    database = MyDatabase(NativeDatabase.memory());
+    database = MyDatabase(DatabaseConnection(
+      NativeDatabase.memory(),
+      closeStreamsSynchronously: true, // (1)!
+    ));
   });
   tearDown(() async {
     await database.close();
   });
 }
 ```
+{.annotate }
+
+1. By default, unsubscribing from a query stream created by drift will keep the stream open for one event
+   loop iteration. This is useful for e.g. Flutter apps, where rebuilds may cause a `StreamBuilder` to
+   re-subscribe to streams frequently.
+   In Flutter widget tests however, it's illegal to keep these timers open after a test concludes.
+   To avoid issues with Drift in that setups, pass a `DatabaseConnection` with `closeStreamsSynchronously: true`
+   to your database.
 
 With that setup in place, we can finally write some tests:
 ```dart

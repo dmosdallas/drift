@@ -1,4 +1,9 @@
-## 0.2.1-dev
+## 0.2.2
+
+- Fix infinite loop in isolate server lookups when using `shareAcrossIsolates`
+  across hot restarts.
+
+## 0.2.1
 
 - Enable serialization between background isolates where necessary.
 

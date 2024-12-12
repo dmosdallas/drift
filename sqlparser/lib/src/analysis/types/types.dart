@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:sqlparser/sqlparser.dart';
 
 part 'expectation.dart';

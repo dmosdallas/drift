@@ -443,4 +443,58 @@ class Database {}
     expect(studentGroupColumn.referenceName, equals('students'));
     expect(teacherGroupColumn.referenceName, equals('teachers'));
   });
+
+  test('recognizes column references in Dart code', () async {
+    final backend = await TestBackend.inTest({
+      'a|lib/main.dart': '''
+import 'package:drift/drift.dart';
+
+class Users extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get creationTime => dateTime()
+    .check(creationTime.isBiggerThan(Constant(DateTime(2020))))
+    .withDefault(Constant(DateTime(2024, 1, 1)))();
+}
+''',
+    });
+
+    final file = await backend.analyze('package:a/main.dart');
+    final table = file.analyzedElements.single as DriftTable;
+    final creationTimeColumn = table.columns[1];
+    expect(creationTimeColumn.constraints, [
+      isA<DartCheckExpression>().having(
+        (e) => e.dartExpression.elements,
+        'dartExpression',
+        contains(
+          isA<TaggedDartLexeme>()
+              .having((e) => e.lexeme, 'lexeme', 'creationTime')
+              .having((e) => e.tag, 'tag', 'creationTime'),
+        ),
+      ),
+    ]);
+  });
+
+  test('recognizes ANY columns', () async {
+    final backend = await TestBackend.inTest({
+      'a|lib/main.dart': '''
+import 'package:drift/drift.dart';
+
+class Preferences extends Table {
+  TextColumn get key => text()();
+  AnyColumn get value => sqliteAny()();
+
+  @override
+  bool get isStrict => true;
+}
+''',
+    });
+
+    final file = await backend.analyze('package:a/main.dart');
+    backend.expectNoErrors();
+
+    final table = file.analyzedElements.single as DriftTable;
+    expect(table.columns.map((c) => c.sqlType.builtin),
+        [DriftSqlType.string, DriftSqlType.any]);
+    expect(table.strict, isTrue);
+  });
 }

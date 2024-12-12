@@ -61,9 +61,17 @@ final Uri modularSupport = Uri.parse('package:drift/internal/modular.dart');
 abstract class _NodeOrWriter {
   Writer get writer;
 
+  void _writeTagged(StringBuffer buffer, TaggedDartLexeme lexeme) {
+    buffer.write(lexeme.lexeme);
+  }
+
   AnnotatedDartCode generatedElement(DriftElement element, String dartName) {
-    return AnnotatedDartCode.build(
-        (b) => b.addGeneratedElement(element, dartName));
+    if (writer.generationOptions.isModular) {
+      return AnnotatedDartCode.build(
+          (b) => b.addGeneratedElement(element, dartName));
+    } else {
+      return AnnotatedDartCode([DartLexeme(dartName)]);
+    }
   }
 
   AnnotatedDartCode modularAccessor(Uri driftFile) {
@@ -218,9 +226,9 @@ abstract class _NodeOrWriter {
           innerColumnType(type.sqlType, nullable: nullable ?? type.nullable);
       return AnnotatedDartCode([
         DartTopLevelSymbol.list,
-        '<',
+        const DartLexeme('<'),
         ...inner.elements,
-        '>',
+        const DartLexeme('>'),
       ]);
     } else {
       return innerColumnType(type.sqlType, nullable: nullable ?? type.nullable);
@@ -304,16 +312,17 @@ abstract class _NodeOrWriter {
     final buffer = StringBuffer();
 
     for (final lexeme in code.elements) {
-      if (lexeme is DartTopLevelSymbol) {
-        final uri = lexeme.importUri;
-
-        if (uri != null) {
-          buffer.write(refUri(uri, lexeme.lexeme));
-        } else {
-          buffer.write(lexeme.lexeme);
-        }
-      } else {
-        buffer.write(lexeme);
+      switch (lexeme) {
+        case DartLexeme(:final lexeme):
+          buffer.write(lexeme);
+        case final TaggedDartLexeme tagged:
+          _writeTagged(buffer, tagged);
+        case DartTopLevelSymbol(importUri: final uri, :final lexeme):
+          if (uri != null) {
+            buffer.write(refUri(uri, lexeme));
+          } else {
+            buffer.write(lexeme);
+          }
       }
     }
 
@@ -415,8 +424,9 @@ class Scope extends _Node {
     return child;
   }
 
-  TextEmitter leaf() {
-    final child = TextEmitter(this);
+  TextEmitter leaf(
+      {void Function(TaggedDartLexeme, StringBuffer)? writeTaggedDartCode}) {
+    final child = TextEmitter(this, writeTaggedDartCode: writeTaggedDartCode);
     _children.add(child);
     return child;
   }
@@ -446,10 +456,22 @@ class Scope extends _Node {
 
 class TextEmitter extends _Node {
   final StringBuffer buffer = StringBuffer();
+  final void Function(TaggedDartLexeme, StringBuffer)? writeTaggedDartCode;
+
   @override
   final Writer writer;
 
-  TextEmitter(Scope super.parent) : writer = parent.writer;
+  TextEmitter(Scope super.parent, {this.writeTaggedDartCode})
+      : writer = parent.writer;
+
+  @override
+  void _writeTagged(StringBuffer buffer, TaggedDartLexeme lexeme) {
+    if (writeTaggedDartCode case final function?) {
+      function(lexeme, buffer);
+    } else {
+      super._writeTagged(buffer, lexeme);
+    }
+  }
 
   void write(Object? object) => buffer.write(object);
 
@@ -500,6 +522,12 @@ class GenerationOptions {
   /// for each database.
   final bool isModular;
 
+  /// Avoid pulling in user-code like type converters or `clientDefault`s.
+  ///
+  /// This is used internally when generating a `SchemaIsolate` used to export
+  /// DDL statements.
+  final bool avoidUserCode;
+
   final ImportManager imports;
 
   const GenerationOptions({
@@ -508,6 +536,7 @@ class GenerationOptions {
     this.writeDataClasses = true,
     this.writeCompanions = true,
     this.isModular = false,
+    this.avoidUserCode = false,
   });
 
   /// Whether, instead of generating the full database code, we're only

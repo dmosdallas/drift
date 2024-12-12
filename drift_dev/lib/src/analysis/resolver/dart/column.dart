@@ -24,6 +24,7 @@ const String _startBool = 'boolean';
 const String _startDateTime = 'dateTime';
 const String _startBlob = 'blob';
 const String _startReal = 'real';
+const String _startAny = 'sqliteAny';
 const String _startCustom = 'customType';
 
 const Set<String> _starters = {
@@ -36,6 +37,7 @@ const Set<String> _starters = {
   _startDateTime,
   _startBlob,
   _startReal,
+  _startAny,
   _startCustom,
 };
 
@@ -79,7 +81,25 @@ const String _errorMessage = 'This getter does not create a valid column that '
 class ColumnParser {
   final DartTableResolver _resolver;
 
-  ColumnParser(this._resolver);
+  /// A map of elements to their name for elements defining columns.
+  ///
+  /// This is used to recognize column references in arbitrary Dart code, e.g.
+  /// in this definition:
+  ///
+  /// ```
+  ///  DateTimeColumn get creationTime => dateTime()
+  ///    .check(creationTime.isBiggerThan(Constant(DateTime(2020))))();
+  /// ```
+  ///
+  /// Here, the check constraint references the column itself. In some code
+  /// generation modes where we generate code for individual columns (instead
+  /// of for entire table structures, this mainly includes step-by-step
+  /// migrations), there might not be a `creationTime` in scope for the check
+  /// constraint. So, we annotate these references in [AnnotatedDartCode] and
+  /// use that information when generating code to transform the code.
+  final Map<Element, String> _columnsInSameTable;
+
+  ColumnParser(this._resolver, this._columnsInSameTable);
 
   Future<PendingColumnInformation?> parse(
       ColumnDeclaration columnDeclaration, Element element) async {
@@ -343,8 +363,9 @@ class ColumnParser {
           break;
         case _methodCheck:
           final expr = remainingExpr.argumentList.arguments.first;
-          foundConstraints
-              .add(DartCheckExpression(AnnotatedDartCode.ast(expr)));
+
+          foundConstraints.add(DartCheckExpression(AnnotatedDartCode.build(
+              (b) => b.addAstNode(expr, taggedElements: _columnsInSameTable))));
       }
 
       // We're not at a starting method yet, so we need to go deeper!
@@ -503,6 +524,7 @@ class ColumnParser {
       _startDateTime: DriftSqlType.dateTime,
       _startBlob: DriftSqlType.blob,
       _startReal: DriftSqlType.double,
+      _startAny: DriftSqlType.any,
     }[name]!;
   }
 
@@ -578,9 +600,11 @@ class ColumnParser {
         _resolver.discovered.dartElement,
         sourceForCustomConstraints!,
         "This column is not declared to be `.nullable()`, but also doesn't "
-        'have `NOT NULL` in its custom constraints. Please explicitly declare '
-        'the column to be nullable in Dart, or add a `NOT NULL` constraint for '
-        'consistency.',
+        'have `NOT NULL` in its custom constraints. Since custom constraints '
+        'override the default, there will be no `NOT NULL` constraint in the '
+        'database.\n'
+        'To fix this, either add a `NOT NULL` constraint here or declare the '
+        'column with `nullable()`',
       ));
     }
 

@@ -76,7 +76,20 @@ bitwise operations:
 
 {{ load_snippet('bitwise','lib/snippets/dart_api/expressions.dart.excerpt.json') }}
 
-## Null checks 
+### BigInt
+
+While SQLite and the Dart VM use 64-bit integers, Dart applications compiled to JavaScript
+don't.
+So, [to represent large integer results](tables.md#when-to-use-bigint-and-int64) when compiling
+to the web, you may want to cast an expression to a `BigInt`.
+
+Using `dartCast<BigInt>()` will ensure that the result is interpreted as a `BigInt` by drift.
+This doesn't change the generated SQL, drift uses a 64-bit integer type for all databases.
+
+**Example:**
+For an expression `(table.columnA * table.columnB).dartCast<BigInt>()`, drift will report the resulting value as a `BigInt` even if `columnA` and `columnB` were defined as regular integers.
+
+## Null checks
 To check whether an expression evaluates to `NULL` in SQL, you can use the `isNull` extension:
 
 ```dart

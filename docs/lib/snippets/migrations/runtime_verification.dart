@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart';
 
-// #docregion
+// #docregion native
 // import the migrations tooling
-import 'package:drift_dev/api/migrations.dart';
-// #enddocregion
+import 'package:drift_dev/api/migrations_native.dart';
+// #enddocregion native
 
 const kDebugMode = true;
 
@@ -11,10 +11,10 @@ abstract class _$MyDatabase extends GeneratedDatabase {
   _$MyDatabase(super.executor);
 }
 
-// #docregion
+// #docregion native
 
 class MyDatabase extends _$MyDatabase {
-// #enddocregion
+// #enddocregion native
   MyDatabase(super.executor);
 
   @override
@@ -24,7 +24,7 @@ class MyDatabase extends _$MyDatabase {
   @override
   int get schemaVersion => throw UnimplementedError();
 
-  // #docregion
+  // #docregion native
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {/* ... */},
@@ -40,4 +40,4 @@ class MyDatabase extends _$MyDatabase {
         },
       );
 }
-// #enddocregion
+// #enddocregion native

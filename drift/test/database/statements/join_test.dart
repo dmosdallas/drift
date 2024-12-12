@@ -555,4 +555,78 @@ void main() {
       expect(row.read(readableLength), 42);
     });
   });
+
+  group('compound operators', () {
+    const expression = Constant<int>(42);
+
+    test('are forbidden with an limit on the part', () {
+      final a = db.selectOnly(db.users)..addColumns([expression]);
+      final b = db.selectOnly(db.users)..limit(10);
+
+      expect(() => a.union(b), throwsArgumentError);
+    });
+
+    test('are forbidden with an order-by on the part', () {
+      final a = db.selectOnly(db.users)..addColumns([expression]);
+      final b = db.selectOnly(db.users)
+        ..addColumns([expression])
+        ..orderBy([OrderingTerm.asc(db.users.id)]);
+
+      expect(() => a.union(b), throwsArgumentError);
+    });
+
+    test('are forbidden with an compounds on the part', () {
+      final a = db.selectOnly(db.users)..addColumns([expression]);
+      final b = db.selectOnly(db.users)
+        ..addColumns([expression])
+        ..intersect(db.selectOnly(db.users)..addColumns([expression]));
+
+      expect(() => a.union(b), throwsArgumentError);
+    });
+
+    test('are forbidden with different column counts', () {
+      final a = db.selectOnly(db.users)..addColumns([expression]);
+      final b = db.selectOnly(db.users);
+
+      expect(() => a.union(b), throwsArgumentError);
+    });
+
+    group('generate correct statements', () {
+      final operators =
+          <(String, void Function(JoinedSelectStatement, BaseSelectStatement))>[
+        ('UNION', (a, b) => a.union(b)),
+        ('UNION ALL', (a, b) => a.unionAll(b)),
+        ('EXCEPT', (a, b) => a.except(b)),
+        ('INTERSECT', (a, b) => a.intersect(b)),
+      ];
+
+      for (final (operator, method) in operators) {
+        test('with $operator', () async {
+          final a = db.selectOnly(db.users)
+            ..addColumns([expression])
+            ..limit(10);
+          final b = db.selectExpressions([const Constant<int>(84)]);
+
+          when(executor.runSelect(any, any)).thenAnswer((_) {
+            return Future.value([
+              {'c0': 42},
+              {'c0': 84}
+            ]);
+          });
+
+          method(a, b);
+
+          final rows = await a.get();
+          expect(rows.map((e) => e.read(expression)), [42, 84]);
+
+          verify(
+            executor.runSelect(
+              'SELECT 42 AS "c0" FROM "users" $operator SELECT 84 "c0"  LIMIT 10;',
+              argThat(isEmpty),
+            ),
+          );
+        });
+      }
+    });
+  });
 }

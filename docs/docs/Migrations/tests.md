@@ -5,6 +5,9 @@ description: Generate test code to write unit tests for your migrations.
 
 ---
 
+!!! warning "Important Note"
+
+      If you are using the `make-migrations` command, tests are already generated for you.
 
 
 
@@ -31,7 +34,7 @@ based on those schema files.
 For verifications, drift will generate a much smaller database implementation that can only be used to
 test migrations.
 
-You can put this test code whereever you want, but it makes sense to put it in a subfolder of `test/`.
+You can put this test code wherever you want, but it makes sense to put it in a subfolder of `test/`.
 If we wanted to write them to `test/generated_migrations/`, we could use
 
 ```
@@ -59,13 +62,10 @@ If it sees anything unexpected, it will throw a `SchemaMismatch` exception to fa
 
 !!! note "Writing testable migrations"
 
-    
     To test migrations _towards_ an old schema version (e.g. from `v1` to `v2` if your current version is `v3`),
     your `onUpgrade` handler must be capable of upgrading to a version older than the current `schemaVersion`.
     For this, check the `to` parameter of the `onUpgrade` callback to run a different migration if necessary.
     Or, use [step-by-step migrations](step_by_step.md) which do this automatically.
-    
-
 
 
 ## Verifying data integrity
@@ -91,3 +91,42 @@ Then, you can import the generated classes with an alias:
 This can then be used to manually create and verify data at a specific version:
 
 {{ load_snippet('main','lib/snippets/migrations/tests/verify_data_integrity_test.dart.excerpt.json') }}
+
+## Verifying a database schema at runtime
+
+Instead (or in addition to) [writing tests](#verifying-a-database-schema-at-runtime) to ensure your migrations work as they should,
+`drift_dev` provides an API  to verify the current schema at runtime without any additional setup on native platforms.
+
+
+=== "Native"
+
+    {{ load_snippet('native','lib/snippets/migrations/runtime_verification.dart.excerpt.json', indent=4) }}
+
+
+=== "Web (since drift 2.22)"
+
+    Starting from drift version 2.22, this functionality is also available on the web. Since the method internally
+    opens another database to create the expected schema, the web variant needs to be configured explicitly:
+
+    {{ load_snippet('web','lib/snippets/migrations/runtime_verification_web.dart.excerpt.json', indent=4) }}
+
+    It's also possible to re-use code between your native and web checks with conditional imports.
+    You can check the [example app](https://github.com/simolus3/drift/tree/develop/examples/app/lib/database/connection) for
+    inspiration.
+
+When you use `validateDatabaseSchema`, drift will transparently:
+
+- collect information about your database by reading from `sqlite3_schema`.
+- create a fresh in-memory instance of your database and create a reference schema with `Migrator.createAll()`.
+- compare the two. Ideally, your actual schema at runtime should be identical to the fresh one even though it
+  grew through different versions of your app.
+
+When a mismatch is found, an exception with a message explaining exactly where another value was expected will
+be thrown.
+This allows you to find issues with your schema migrations quickly.
+
+!!! tip "Also available in DevTools"
+
+    Ensuring that the current schema matches the expected state is also a feature available in Drift's
+    [DevTools extension]('../Tools/devtools.md').
+    The extensions also allow resetting a database, which might be useful when working on or debugging migrations.

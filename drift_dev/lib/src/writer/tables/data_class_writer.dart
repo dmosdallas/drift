@@ -30,7 +30,7 @@ class DataClassWriter {
       final nullable = converter.canBeSkippedForNulls && column.nullable;
       final code = AnnotatedDartCode([
         ...AnnotatedDartCode.type(converter.jsonType!).elements,
-        if (nullable) '?',
+        if (nullable) const DartLexeme('?'),
       ]);
 
       return _emitter.dartCode(code);
@@ -95,6 +95,7 @@ class DataClassWriter {
         customParent?.isConst != false) {
       _buffer.write('const ');
     }
+    final allRequired = scope.options.rowClassConstructorAllRequired;
     _emitter
       ..write(table.nameOfRowClass)
       ..write('({')
@@ -103,7 +104,7 @@ class DataClassWriter {
             ? column.typeConverter!.mapsToNullableDart(column.nullable)
             : column.nullable;
 
-        if (nullableDartType) {
+        if (nullableDartType && !allRequired) {
           return 'this.${column.nameInDart}';
         } else {
           return 'required this.${column.nameInDart}';

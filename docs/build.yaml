@@ -1,15 +1,22 @@
 builders:
   versions:
-    import: "builders/write_versions.dart"
+    import: "tool/write_versions.dart"
     build_to: source
     builder_factories: ["writeVersions"]
     build_extensions: { "$package$": ["lib/versions.json"] }
   code_snippets:
-    import: "builders/snippets.dart"
+    import: "tool/snippets.dart"
     build_to: source
     builder_factories: ["SnippetsBuilder.new"]
     build_extensions: { "": [".excerpt.json"] }
     auto_apply: none
+  api_index:
+    import: 'package:code_snippets/indexer.dart'
+    build_to: cache
+    builder_factories: ['DartIndexBuilder.new']
+    auto_apply: all_packages
+    runs_before: [code_snippets]
+    build_extensions: {"lib/lib": ['api.json']}
 
 targets:
   prepare:
@@ -41,6 +48,8 @@ targets:
             dialect: sqlite
             options:
               version: "3.39"
+          databases:
+            main_db: "lib/snippets/dart_api/manager.dart"
         generate_for:
           include: &modular
             - "lib/snippets/_shared/**"
@@ -117,6 +126,9 @@ targets:
           dart2js_args:
             - "-O4"
             - "--csp"
+      sass_builder:
+        generate_for:
+          - docs/drift.scss
       # These builders should run in the source_gen target
       drift_dev:preparing_builder:
         enabled: false
@@ -131,7 +143,17 @@ targets:
     sources:
       include:
         - "lib/**"
-        - "pages/**"
         - "web/**"
         - "$package$"
         - "pubspec.yaml"
+        - "docs/*"
+
+# Snippets referencing public API members from this package will get dartdoc links
+# embedded in them.
+global_options:
+  ":api_index":
+    options:
+      packages: ['drift', 'drift_dev', 'drift_flutter', 'sqlite3', 'sqlite3_flutter_libs', 'sqlcipher_flutter_libs']
+
+additional_public_assets:
+  - "docs/**"

@@ -605,8 +605,8 @@ void main() {
 
       verify(executor.runInsert(
         'WITH _source AS (SELECT * FROM "categories") INSERT INTO "categories" '
-        '("desc", "priority") SELECT "desc", "priority" FROM _source '
-        'ON CONFLICT("id") DO UPDATE SET "desc" = "desc"',
+        '("desc", "priority") SELECT "desc", "priority" FROM _source WHERE TRUE'
+        ' ON CONFLICT("id") DO UPDATE SET "desc" = "desc"',
         argThat(isEmpty),
       ));
     });

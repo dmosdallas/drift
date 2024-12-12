@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -11,9 +12,21 @@ class TestDriftProject {
 
   TestDriftProject(this.root);
 
-  Future<void> runDriftCli(Iterable<String> args) {
+  Future<void> runDriftCli(
+    Iterable<String> args, {
+    bool dropPrints = true,
+  }) {
     return IOOverrides.runZoned(
-      () => DriftDevCli().run(args),
+      () => runZoned(
+        () => DriftDevCli().run(args),
+        zoneSpecification: ZoneSpecification(
+          print: (self, parent, zone, line) {
+            if (!dropPrints) {
+              parent.print(zone, line);
+            }
+          },
+        ),
+      ),
       getCurrentDirectory: () => root,
     );
   }

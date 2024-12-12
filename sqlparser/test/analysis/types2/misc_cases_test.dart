@@ -176,4 +176,19 @@ WITH RECURSIVE
       ResolvedType(type: BasicType.int),
     ]);
   });
+
+  test('keeps nullability information across unions', () {
+    // https://github.com/simolus3/drift/issues/3351
+    final engine = SqlEngine();
+    final ctx = engine.analyze('''
+      SELECT CAST(NULL AS INT) AS value
+      UNION
+      SELECT CAST(NULL AS INT);
+    ''');
+
+    final select = ctx.root as CompoundSelectStatement;
+    final column = select.resolvedColumns!.first;
+    expect(ctx.typeOf(column),
+        ResolveResult(ResolvedType(nullable: true, type: BasicType.int)));
+  });
 }

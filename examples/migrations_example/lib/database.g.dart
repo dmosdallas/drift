@@ -29,7 +29,10 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   @override
   late final GeneratedColumn<DateTime> birthday = GeneratedColumn<DateTime>(
       'birthday', aliasedName, true,
-      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+      check: () =>
+          ComparableExpr(birthday).isBiggerThan(Constant(DateTime(1900))),
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false);
   static const VerificationMeta _nextUserMeta =
       const VerificationMeta('nextUser');
   @override
@@ -1261,8 +1264,7 @@ final class $GroupsReferences
   static $UsersTable _ownerTable(_$Database db) =>
       db.users.createAlias($_aliasNameGenerator(db.groups.owner, db.users.id));
 
-  $$UsersTableProcessedTableManager? get owner {
-    if ($_item.owner == null) return null;
+  $$UsersTableProcessedTableManager get owner {
     final manager = $$UsersTableTableManager($_db, $_db.users)
         .filter((f) => f.id($_item.owner!));
     final item = $_typedResult.readTableOrNull(_ownerTable($_db));

@@ -357,9 +357,9 @@ class _FakeJoinedSelectStatement_30<FirstT extends _i2.HasResultSet, FirstD>
         );
 }
 
-class _FakeDeleteStatement_31<T1 extends _i2.Table, D1> extends _i1.SmartFake
-    implements _i2.DeleteStatement<T1, D1> {
-  _FakeDeleteStatement_31(
+class _FakeBaseSelectStatement_31<Row> extends _i1.SmartFake
+    implements _i2.BaseSelectStatement<Row> {
+  _FakeBaseSelectStatement_31(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -368,9 +368,20 @@ class _FakeDeleteStatement_31<T1 extends _i2.Table, D1> extends _i1.SmartFake
         );
 }
 
-class _FakeGenerationContext_32 extends _i1.SmartFake
+class _FakeDeleteStatement_32<T1 extends _i2.Table, D1> extends _i1.SmartFake
+    implements _i2.DeleteStatement<T1, D1> {
+  _FakeDeleteStatement_32(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeGenerationContext_33 extends _i1.SmartFake
     implements _i2.GenerationContext {
-  _FakeGenerationContext_32(
+  _FakeGenerationContext_33(
     Object parent,
     Invocation parentInvocation,
   ) : super(
@@ -1158,28 +1169,28 @@ class MockTodoDb extends _i1.Mock implements _i3.TodoDb {
       ) as _i2.JoinedSelectStatement<T, R>);
 
   @override
-  _i2.Selectable<_i2.TypedResult> selectExpressions(
+  _i2.BaseSelectStatement<_i2.TypedResult> selectExpressions(
           Iterable<_i2.Expression<Object>>? columns) =>
       (super.noSuchMethod(
         Invocation.method(
           #selectExpressions,
           [columns],
         ),
-        returnValue: _FakeSelectable_24<_i2.TypedResult>(
+        returnValue: _FakeBaseSelectStatement_31<_i2.TypedResult>(
           this,
           Invocation.method(
             #selectExpressions,
             [columns],
           ),
         ),
-        returnValueForMissingStub: _FakeSelectable_24<_i2.TypedResult>(
+        returnValueForMissingStub: _FakeBaseSelectStatement_31<_i2.TypedResult>(
           this,
           Invocation.method(
             #selectExpressions,
             [columns],
           ),
         ),
-      ) as _i2.Selectable<_i2.TypedResult>);
+      ) as _i2.BaseSelectStatement<_i2.TypedResult>);
 
   @override
   _i2.DeleteStatement<T, D> delete<T extends _i2.Table, D>(
@@ -1189,14 +1200,14 @@ class MockTodoDb extends _i1.Mock implements _i3.TodoDb {
           #delete,
           [table],
         ),
-        returnValue: _FakeDeleteStatement_31<T, D>(
+        returnValue: _FakeDeleteStatement_32<T, D>(
           this,
           Invocation.method(
             #delete,
             [table],
           ),
         ),
-        returnValueForMissingStub: _FakeDeleteStatement_31<T, D>(
+        returnValueForMissingStub: _FakeDeleteStatement_32<T, D>(
           this,
           Invocation.method(
             #delete,
@@ -1482,7 +1493,7 @@ class MockTodoDb extends _i1.Mock implements _i3.TodoDb {
             #startIndex: startIndex,
           },
         ),
-        returnValue: _FakeGenerationContext_32(
+        returnValue: _FakeGenerationContext_33(
           this,
           Invocation.method(
             #$write,
@@ -1493,7 +1504,7 @@ class MockTodoDb extends _i1.Mock implements _i3.TodoDb {
             },
           ),
         ),
-        returnValueForMissingStub: _FakeGenerationContext_32(
+        returnValueForMissingStub: _FakeGenerationContext_33(
           this,
           Invocation.method(
             #$write,
@@ -1521,7 +1532,7 @@ class MockTodoDb extends _i1.Mock implements _i3.TodoDb {
           ],
           {#startIndex: startIndex},
         ),
-        returnValue: _FakeGenerationContext_32(
+        returnValue: _FakeGenerationContext_33(
           this,
           Invocation.method(
             #$writeInsertable,
@@ -1532,7 +1543,7 @@ class MockTodoDb extends _i1.Mock implements _i3.TodoDb {
             {#startIndex: startIndex},
           ),
         ),
-        returnValueForMissingStub: _FakeGenerationContext_32(
+        returnValueForMissingStub: _FakeGenerationContext_33(
           this,
           Invocation.method(
             #$writeInsertable,

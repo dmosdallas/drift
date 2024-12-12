@@ -33,7 +33,12 @@ drift_dev () {
 run_webdev(){
     echo "Running webdev..."
     # The below command will compile the dart code in `/web` to js & run build_runner
-    dart run webdev build -o web:build/web -- --delete-conflicting-outputs --release
+    if [ $1 -eq 1 ]; then
+        echo "Running dev build"
+        dart run webdev build -o web:build/web -- --delete-conflicting-outputs
+    else
+        dart run webdev build -o web:build/web -- --delete-conflicting-outputs --release
+    fi
     if [ $? -ne 0 ]; then
         echo "Failed to build the project"
         exit 1
@@ -67,8 +72,13 @@ if [ $arg1 == "build" ]; then
 
     # If the environmental value IS_RELEASE is set to true, then DONT generate the robots.txt file
     if [ "$IS_RELEASE" != "true" ]; then
+        echo "Not a release build, set IS_RELEASE to true to allow crawling."
         echo "User-agent: *" > ./web/robots.txt
         echo "Disallow: /" >> ./web/robots.txt
+    else
+        echo "Release build!"
+        echo "User-agent: *" > ./web/robots.txt
+        echo "Disallow:" >> ./web/robots.txt
     fi
 
 
@@ -126,22 +136,14 @@ elif [ $arg1 == "serve" ]; then
     echo "Serving the project..."
 
     drift_dev
-
-    dart run build_runner build --delete-conflicting-outputs 
-    if [ $? -ne 0 ]; then
-        echo "Failed to build the project"
-        exit 1
-    fi
-
-    run_webdev
-    
+    run_webdev 1
     build_container
 
     serve_mkdocs &
 
     if [ $arg2 == "--with-build-runner" ]; then
         echo "Running build_runner watch..."
-        dart run build_runner watch
+        dart run build_runner watch -d
     fi
 
     wait
@@ -150,6 +152,3 @@ else
     echo "Invalid argument. Please use 'build' or 'serve'"
     exit 1
 fi
-
-
-

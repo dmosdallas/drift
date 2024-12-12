@@ -319,6 +319,25 @@ void main() {
 
     await db.close();
   });
+
+  test('customStatement can run multiple statements', () async {
+    final db = TodoDb(NativeDatabase.memory());
+    db.migration = MigrationStrategy(onCreate: (_) async {
+      await db.customStatement('''
+CREATE TABLE users (
+  id INTEGER NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL
+);
+
+CREATE TABLE groups (
+  id INTEGER NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL
+);
+''');
+    });
+
+    await db.customSelect('SELECT * FROM groups').get();
+  });
 }
 
 class _FakeExecutorUser extends QueryExecutorUser {

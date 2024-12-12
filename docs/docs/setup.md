@@ -5,8 +5,6 @@ description: All you need to know about adding drift to your project.
 
 ---
 
-
-
 Drift is a powerful database library for Dart and Flutter applications. To
 support its advanced capabilities like type-safe SQL queries, verification of
 your database and migrations, it uses a builder and command-line tooling that
@@ -20,14 +18,11 @@ please share that with the community by [starting a discussion on GitHub](https:
 If you want to look at an example app for inspiration, a cross-platform Flutter app using drift is available
 [as part of the drift repository](https://github.com/simolus3/drift/tree/develop/examples/app).
 
-## The dependencies 
+## The dependencies
 
 First, let's add drift to your project's `pubspec.yaml`.
 In addition to the core drift dependencies (`drift` and `drift_dev` to generate code), we're also
 adding a package to open database on the respective platform.
-
-
-
 
 ===  "Flutter (sqlite3)"
 
@@ -57,7 +52,7 @@ adding a package to open database on the respective platform.
     supported.
     In Flutter's current native build system, drift unfortunately can't do that for you.
 
-===  "Flutter (sqlite3)"
+===  "Dart (sqlite3)"
 
     ```yaml
     dependencies:
@@ -109,9 +104,6 @@ adding a package to open database on the respective platform.
                   # Uncomment if you need to support both
     #              - sqlite
     ```
-
-
-
 
 
 ## Database class
@@ -218,8 +210,8 @@ This short snippet shows how the database can be opened and how to run inserts a
 But drift can do so much more! These pages provide more information useful when getting
 started with drift:
 
-- [Dart tables](dart_api/tables.md): This page describes how to write your own
-  Dart tables and which classes drift generates for them.
+- [Dart tables](dart_api/tables.md): This page describes how to define your own tables in Dart.
+  For an overview of the classes drift generates for tables, check out [row classes](dart_api/rows.md).
 - For new drift users or users not familiar with SQL, the [manager](dart_api/manager.md) APIs
   for tables allows writing most queries with a syntax you're likely familiar with from ORMs or other
   packages.

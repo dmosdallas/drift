@@ -76,6 +76,7 @@ class DriftAnalysisDriver {
         ),
         enabledExtensions: [
           DriftOptionsExtension(options),
+          if (options.hasModule(SqlModule.dbstat)) const DbStatExtension(),
           if (options.hasModule(SqlModule.fts5)) const Fts5Extension(),
           if (options.hasModule(SqlModule.json1)) const Json1Extension(),
           if (options.hasModule(SqlModule.moor_ffi))

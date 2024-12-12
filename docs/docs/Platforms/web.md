@@ -5,16 +5,13 @@ description: Drift support in Flutter and Dart web apps.
 
 ---
 
+<script src="/compatibility.dart.js"></script>
+
 !!! note ""
 
-    
     __Good news__: With drift 2.9.0, web support is stable and officially supported!
     The `WasmDatabase.open` API is the preferred way to run drift on the web. While older
     APIs continue to work, using the stable API will bring performance and safety benefits.
-    
-
-
-
 
 
 Using modern browser APIs such as WebAssembly and the Origin-Private File System API,
@@ -53,20 +50,20 @@ browser in that case.
 
 !!! note "Compatibility check"
 
-    
+
     This page includes a tiny drift database compiled to JavaScript.
     You can use it to verify drift works in the browsers you want to target.
     Clicking on the button will start a feature detection run, so you can see which file system
     implementation drift would pick on this browser and which web APIs are missing.
 
     <button class="md-button" id="drift-compat-btn">Check compatibility</button>
-    
+
     <pre id="drift-compat-results", style="display: flex; flex-direction: column;">
     Compatibility check not started yet
     </pre>
-    
+
     More information about these results is available [below](#supported-storage-implementations).
-    
+
 
 
 
@@ -103,13 +100,13 @@ web/
 
 !!! info "Serving wasm files"
 
-    
+
     For browsers to accept the `sqlite3.wasm` file, it must be served with
     `Content-Type: application/wasm`.
     `flutter run` does this by default, but some webservers might not. After
     deploying your app to the web, check that your server is configured to send the
     correct `Content-Type` header for wasm files.
-    
+
 
 
 
@@ -124,30 +121,30 @@ Just like the official sqlite3 port to the web, __this requires your website to 
 - `Cross-Origin-Embedder-Policy`: Needs to be set to `require-corp` or `credentialless`.
 
 For more details, see the [security requirements](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer) explained by MDN, and the [documentation on web.dev](https://web.dev/coop-coep/).
-Unfortunately, there's no way (that I'm aware of) to add these headers onto `flutter run`'s web server.
-Drift will fall back to a (slightly slower) implementation in that case (see [storages](#supported-storage-implementations)),
-but we recommend researching and enabling these headers in production if possible.
+You can use ``flutter run  --web-header=Cross-Origin-Opener-Policy=same-origin --web-header=Cross-Origin-Embedder-Policy=require-corp`` to add these headers onto `flutter run`'s web server.
+However, if you use `flutter run` just like always Drift will fall back to a (slightly slower) implementation (see [storages](#supported-storage-implementations)).
+We recommend researching and enabling these headers in production, too, if possible.
 
 Also, note that the `sqlite3.wasm` file needs to be served with a `Content-Type` of
 `application/wasm` since browsers will reject the module otherwise.
 
 !!! danger "Downsides of COOP and COEP"
 
-    
+
     While these headers are required for the origin-private FileSystem Access API
     and bring a security benefit, there are some known problems:
-    
+
     - These headers are incompatible with some other packages opening popups,
     such as the ones used for [Google Auth](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid?hl=en#cross_origin_opener_policy).
     - Safari 16 has an [unfortunate bug](https://bugs.webkit.org/show_bug.cgi?id=245346)
     preventing dedicated workers to be loaded from cache with these headers. However, shared and service workers
     are unaffected by this.
-    
+
     Please carefully test your app with these headers to evaluate whether you might
     be affected by these limitations.
     If the headers break your app, you should not enable them - drift will fall back
     to another (potentially slower) implementation in that case.
-    
+
 
 
 
@@ -253,7 +250,7 @@ If you have a cool open-source web application using drift, we'd love to list it
 
 ## Advanced uses
 
-### Supported storage implementations 
+### Supported storage implementations
 
 When opening a database, drift determines the state of a number of web APIs in the current browser.
 It then picks a suitable database storage based on what the current browser supports.

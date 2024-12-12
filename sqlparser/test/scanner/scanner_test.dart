@@ -79,4 +79,23 @@ void main() {
       );
     });
   });
+
+  test('does not crash on non-SQL input', () async {
+    // Regression test for https://github.com/simolus3/drift/issues/3273#issuecomment-2468988502
+    const badInput = '''
+class Screen extends ConsumerStatefulWidget {
+  const Screen({super.key});
+
+  @override
+  ConsumerState<Screen> createState() => _ScreenState();
+}
+''';
+
+    expect(() => SqlEngine().tokenize(badInput),
+        throwsA(isA<CumulatedTokenizerException>()));
+
+    final parsed = SqlEngine().parse(badInput);
+    expect(parsed.errors, isNotEmpty);
+    expect(parsed.rootNode, isA<InvalidStatement>());
+  });
 }

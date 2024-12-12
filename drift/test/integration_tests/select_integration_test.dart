@@ -100,4 +100,43 @@ void main() {
     expect(second.read(db.categories.id), 2);
     expect(second.read(readableLength), 6);
   });
+
+  test('compound statements', () async {
+    await db.batch((batch) {
+      batch.insertAll(db.categories, [
+        CategoriesCompanion.insert(description: 'category'),
+      ]);
+
+      batch.insertAll(
+        db.todosTable,
+        [
+          for (var i = 0; i < 2; i++)
+            TodosTableCompanion.insert(content: 'a', category: Value(RowId(1))),
+          for (var i = 0; i < 3; i++)
+            TodosTableCompanion.insert(content: 'b', category: Value(null)),
+        ],
+      );
+    });
+
+    final count = subqueryExpression<int>(db.selectOnly(db.todosTable)
+      ..addColumns([countAll()])
+      ..where(db.todosTable.category.equalsExp(db.categories.id)));
+    final countWithoutCategory =
+        subqueryExpression<int>(db.selectOnly(db.todosTable)
+          ..addColumns([countAll()])
+          ..where(db.todosTable.category.isNull()));
+
+    final query = db.selectOnly(db.categories)
+      ..addColumns([db.categories.description, count])
+      ..groupBy([db.categories.id]);
+    query.unionAll(db.selectExpressions(
+        [const Constant<String>(null), countWithoutCategory]));
+
+    final [category, withoutCategory] = await query.get();
+    expect(category.read(db.categories.description), 'category');
+    expect(category.read(count), 2);
+
+    expect(withoutCategory.read(db.categories.description), null);
+    expect(withoutCategory.read(count), 3);
+  });
 }

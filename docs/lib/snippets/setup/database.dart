@@ -40,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
 // #enddocregion before_generation
   // After generating code, this class needs to define a `schemaVersion` getter
   // and a constructor telling drift where the database should be stored.
-  // These are described in the getting started guide: https://drift.simonbinder.eu/getting-started/#open
+  // These are described in the getting started guide: https://drift.simonbinder.eu/setup/
   AppDatabase() : super(_openConnection());
 
   @override

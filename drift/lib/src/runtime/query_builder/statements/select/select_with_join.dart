@@ -7,7 +7,7 @@ part of '../../query_builder.dart';
 class JoinedSelectStatement<FirstT extends HasResultSet, FirstD>
     extends Query<FirstT, FirstD>
     with LimitContainerMixin, Selectable<TypedResult>
-    implements BaseSelectStatement {
+    implements BaseSelectStatement<TypedResult> {
   /// Used internally by drift, users should use [SimpleSelectStatement.join]
   /// instead.
   JoinedSelectStatement(super.database, super.table, this._joins,
@@ -35,6 +35,10 @@ class JoinedSelectStatement<FirstT extends HasResultSet, FirstD>
   /// More interestingly, other expressions used as columns will be included
   /// here. They're just named in increasing order, so something like `AS c3`.
   final Map<Expression, String> _columnAliases = {};
+
+  /// Compound statements that have been added to this select statements, e.g.
+  /// through
+  final List<(_CompoundOperator, BaseSelectStatement)> _compounds = [];
 
   /// The tables this select statement reads from
   @visibleForOverriding
@@ -115,6 +119,149 @@ class JoinedSelectStatement<FirstT extends HasResultSet, FirstD>
     }
   }
 
+  void _addCompound(_CompoundOperator operator, BaseSelectStatement other) {
+    if (other is JoinedSelectStatement) {
+      if (other.limitExpr != null ||
+          other.orderByExpr != null ||
+          other._compounds.isNotEmpty) {
+        throw ArgumentError(
+            "Can't add compound query that has a limit or an order-by clause. "
+            'Also, the added query must hot have its own compound parts. Add  '
+            'the clauses and parts to the top-level parts instead.');
+      }
+    }
+
+    var columnsHere = _expandedColumns.iterator;
+    var otherColumns = other._expandedColumns.iterator;
+    var columnCount = 0;
+
+    while (columnsHere.moveNext()) {
+      if (!otherColumns.moveNext()) {
+        throw ArgumentError(
+            "Can't add select with fewer columns (added part has "
+            '$columnCount columns, the original source has more).');
+      }
+
+      var here = columnsHere.current;
+      var otherColumn = otherColumns.current;
+
+      if (here.$1.driftSqlType != otherColumn.$1.driftSqlType) {
+        throw ArgumentError(
+            "Can't add part because the column types at index $columnCount "
+            'differ.');
+      }
+
+      columnCount++;
+    }
+
+    if (otherColumns.moveNext()) {
+      throw ArgumentError(
+          "Can't add select with more columns (the original query has "
+          '$columnCount columns, the added part has more).');
+    }
+
+    _compounds.add((operator, other));
+  }
+
+  /// Appends the [other] statement as a `UNION` clause after this query.
+  ///
+  /// The database will run both queries and return all rows involved in either
+  /// query, removing duplicates. For this to work, this and [other] must have
+  /// compatible columns.
+  ///
+  /// The [other] query must not include a `LIMIT` or a `ORDER BY` clause.
+  /// Compound statements can only contain a single `LIMIT` and `ORDER BY`
+  /// clause at the end, which is set on the first statement (on which
+  /// [union] is called). Also, the [other] statement must not contain compound
+  /// parts on its own.
+  ///
+  /// As an example, consider a `todos` table of todo items referencing a
+  /// `categories` table used to group them. With that structure, it's possible
+  /// to compute the amount of todo items in each category, as well as the
+  /// amount of todo items not in a category in a single query:
+  ///
+  /// ```dart
+  ///   final count = subqueryExpression<int>(selectOnly(todos)
+  ///    ..addColumns([countAll()])
+  ///    ..where(todos.category.equalsExp(categories.id)));
+  ///  final countWithoutCategory = subqueryExpression<int>(db.selectOnly(todos)
+  ///        ..addColumns([countAll()])
+  ///        ..where(todos.category.isNull()));
+  ///
+  ///  final query = db.selectOnly(db.categories)
+  ///    ..addColumns([db.categories.description, count])
+  ///    ..groupBy([categories.id]);
+  ///  query.union(db.selectExpressions(
+  ///      [const Constant<String>(null), countWithoutCategory]));
+  /// ```
+  void union(BaseSelectStatement other) {
+    _addCompound(_CompoundOperator.union, other);
+  }
+
+  /// Appends the [other] statement as a `UNION ALL` clause after this query.
+  ///
+  /// The database will run both queries and return all rows involved in either
+  /// query. For this to work, this and [other] must have compatible columns.
+  ///
+  /// The [other] query must not include a `LIMIT` or a `ORDER BY` clause.
+  /// Compound statements can only contain a single `LIMIT` and `ORDER BY`
+  /// clause at the end, which is set on the first statement (on which
+  /// [unionAll] is called). Also, the [other] statement must not contain
+  /// compound parts on its own.
+  ///
+  /// As an example, consider a `todos` table of todo items referencing a
+  /// `categories` table used to group them. With that structure, it's possible
+  /// to compute the amount of todo items in each category, as well as the
+  /// amount of todo items not in a category in a single query:
+  ///
+  /// ```dart
+  ///   final count = subqueryExpression<int>(selectOnly(todos)
+  ///    ..addColumns([countAll()])
+  ///    ..where(todos.category.equalsExp(categories.id)));
+  ///  final countWithoutCategory = subqueryExpression<int>(db.selectOnly(todos)
+  ///        ..addColumns([countAll()])
+  ///        ..where(todos.category.isNull()));
+  ///
+  ///  final query = db.selectOnly(db.categories)
+  ///    ..addColumns([db.categories.description, count])
+  ///    ..groupBy([categories.id]);
+  ///  query.unionAll(db.selectExpressions(
+  ///      [const Constant<String>(null), countWithoutCategory]));
+  /// ```
+  void unionAll(BaseSelectStatement other) {
+    _addCompound(_CompoundOperator.unionAll, other);
+  }
+
+  /// Appends the [other] statement as a `EXCEPT` clause after this query.
+  ///
+  /// The database will run both queries and return all rows of the first query
+  /// that were not returned by [other]. For this to work, this and [other] must
+  /// have compatible columns.
+  ///
+  /// The [other] query must not include a `LIMIT` or a `ORDER BY` clause.
+  /// Compound statements can only contain a single `LIMIT` and `ORDER BY`
+  /// clause at the end, which is set on the first statement (on which
+  /// [except] is called). Also, the [other] statement must not contain
+  /// compound parts on its own.
+  void except(BaseSelectStatement other) {
+    _addCompound(_CompoundOperator.except, other);
+  }
+
+  /// Appends the [other] statement as a `INTERSECT` clause after this query.
+  ///
+  /// The database will run both queries and return all rows that were returned
+  /// by both queries. For this to work, this and [other] must have compatible
+  /// columns.
+  ///
+  /// The [other] query must not include a `LIMIT` or a `ORDER BY` clause.
+  /// Compound statements can only contain a single `LIMIT` and `ORDER BY`
+  /// clause at the end, which is set on the first statement (on which
+  /// [intersect] is called). Also, the [other] statement must not contain
+  /// compound parts on its own.
+  void intersect(BaseSelectStatement other) {
+    _addCompound(_CompoundOperator.intersect, other);
+  }
+
   @override
   void writeStartPart(GenerationContext ctx) {
     ctx.hasMultipleTables = true;
@@ -147,6 +294,28 @@ class JoinedSelectStatement<FirstT extends HasResultSet, FirstD>
 
         _joins[i].writeInto(ctx);
       }
+    }
+  }
+
+  @override
+  void writeInto(GenerationContext context) {
+    if (_compounds.isEmpty) {
+      super.writeInto(context);
+    } else {
+      // The order by and limit clauses must appear after the compounds.
+      super._writeInto(context, withOrderByAndLimit: false);
+
+      for (final (operator, statement) in _compounds) {
+        context.writeWhitespace();
+        context.buffer.write(operator.lexeme);
+        context.writeWhitespace();
+        statement.writeInto(context);
+      }
+
+      context.writeWhitespace();
+      orderByExpr?.writeInto(context);
+      context.writeWhitespace();
+      limitExpr?.writeInto(context);
     }
   }
 
@@ -400,4 +569,15 @@ extension JoinedSelectStatementAdditionalTables on JoinedSelectStatement {
           [Iterable<ResultSetImplementation<dynamic, dynamic>> tables =
               const []]) =>
       _watchWithAdditionalTables(tables);
+}
+
+enum _CompoundOperator {
+  union('UNION'),
+  unionAll('UNION ALL'),
+  intersect('INTERSECT'),
+  except('EXCEPT');
+
+  final String lexeme;
+
+  const _CompoundOperator(this.lexeme);
 }
